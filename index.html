@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我的專屬桌遊清單</title>
+  <title>重雨桌遊櫃</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
     body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
@@ -19,17 +19,17 @@
     .filter-btn {
       padding: 8px 18px;
       background-color: #fff;
-      border: 2px solid #e67e22;
-      color: #e67e22;
+      border: 2px solid #4F5C48; /* 替換為你的色碼 */
+      color: #4F5C48;          /* 替換為你的色碼 */
       border-radius: 25px;
       cursor: pointer;
       font-weight: bold;
       transition: all 0.2s ease;
     }
     .filter-btn:hover, .filter-btn.active {
-      background-color: #e67e22;
+      background-color: #4F5C48; /* 替換為你的色碼 */
       color: white;
-      box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3);
+      box-shadow: 0 4px 10px rgba(79, 92, 72, 0.3); /* 配合色碼微調陰影 */
     }
 
     .grid {
@@ -89,20 +89,20 @@
     .bgg-link {
       display: block;
       padding: 10px;
-      background-color: #e67e22;
+      background-color: #4F5C48; /* 替換為你的色碼 */
       color: white;
       text-decoration: none;
       border-radius: 8px;
       font-size: 0.9em;
       font-weight: bold;
     }
-    .bgg-link:hover { background-color: #d35400; }
+    .bgg-link:hover { background-color: #3d4738; } /* BGG按鈕Hover稍微加深一點點 */
     #status-msg { margin: 20px; color: #666; font-style: italic; }
   </style>
 </head>
 <body>
 
-  <h1>🎲 我的桌遊收藏</h1>
+  <h1>🎲 重雨桌遊櫃</h1>
   
   <div id="filter-container">
     <button class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
@@ -119,12 +119,10 @@
       download: true,
       header: true,
       skipEmptyLines: true,
-      // 🛡️ 防呆機制：自動清除標題前後的隱藏空白鍵
       transformHeader: function(header) {
         return header.trim();
       },
       complete: function(results) {
-        // 直接鎖定 NAME 欄位來過濾有效資料
         allGames = results.data.filter(game => game.NAME);
         
         if (allGames.length === 0) {
@@ -143,10 +141,8 @@
       const types = new Set();
       
       allGames.forEach(game => {
-        // 精準讀取 GAMETYPE
         const typeStr = game.GAMETYPE || '';
         if (typeStr) {
-          // 支援多種類 (用逗號隔開會自動拆成不同按鈕)
           typeStr.split(/[,，/ ]+/).forEach(t => {
             if(t.trim() !== '') types.add(t.trim());
           });
@@ -181,12 +177,12 @@
       container.innerHTML = '';
 
       games.forEach(game => {
-        // 精準對應你的所有欄位名稱
         const name = game.NAME;
         const imgPath = game.IMGUR || 'https://via.placeholder.com/250x250?text=No+Image';
         const players = game.PLAYER || '--';
         const time = game.PLAYTIME || '--';
-        const desc = game.DESCRIP || '尚無內容介紹。';
+        // 🛡️ 同時相容 DESCRIPTION 或 DESCRIP 兩種寫法
+        const desc = game.DESCRIPTION || game.DESCRIP || '尚無內容介紹。';
         const bgg = game.BGGID;
 
         const card = document.createElement('div');
