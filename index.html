@@ -7,10 +7,34 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
     body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
-    h1 { color: #333; margin-bottom: 30px; }
+    h1 { color: #333; margin-bottom: 20px; }
+    
+    /* 🔘 篩選按鈕樣式 */
+    #filter-container {
+      margin-bottom: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .filter-btn {
+      padding: 8px 16px;
+      background-color: #fff;
+      border: 2px solid #e67e22;
+      color: #e67e22;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background-color: #e67e22;
+      color: white;
+    }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 稍微加寬一點，好容納描述 */
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 25px;
       max-width: 1200px;
       margin: 0 auto;
@@ -24,15 +48,14 @@
       flex-direction: column;
       transition: all 0.3s ease;
       border: 1px solid #eee;
-      text-align: left; /* 資料靠左對齊比較好閱讀 */
+      text-align: left;
     }
     .card:hover { transform: translateY(-8px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
     
-    /* 🖼️ 圖片顯示修正：改為 contain 確保不裁切，並留白 */
     .img-container {
       width: 100%;
       height: 250px;
-      background-color: #fff; /* 比例不合時的留白顏色 */
+      background-color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -41,7 +64,7 @@
     .card img {
       max-width: 100%;
       max-height: 100%;
-      object-fit: contain; /* 關鍵：完整顯示圖片，不裁切 */
+      object-fit: contain;
     }
 
     .card-content { padding: 15px; flex-grow: 1; }
@@ -52,7 +75,6 @@
       font-size: 0.85em; 
       color: #7f8c8d; 
       line-height: 1.5;
-      /* 限制描述高度，太長會變省略號 */
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
@@ -77,66 +99,115 @@
 <body>
 
   <h1>🎲 我的桌遊收藏</h1>
+  
+  <div id="filter-container">
+    <button class="filter-btn active" onclick="filterGames('全部')">全部</button>
+  </div>
+
   <div id="status-msg">正在從 Google 試算表同步最新資料...</div>
   <div class="grid" id="bg-list"></div>
 
   <script>
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv'; 
+    let allGames = []; // 儲存所有抓到的桌遊資料
 
     Papa.parse(csvUrl, {
       download: true,
       header: true,
       skipEmptyLines: true,
       complete: function(results) {
-        const msgElement = document.getElementById('status-msg');
-        const container = document.getElementById('bg-list');
-        const data = results.data;
-
-        if (data.length === 0) {
-          msgElement.innerText = '讀取成功，但表單內似乎沒有資料。';
+        allGames = results.data.filter(game => game['NAME'] || game['名稱'] || game['Name']);
+        
+        if (allGames.length === 0) {
+          document.getElementById('status-msg').innerText = '讀取成功，但表單內似乎沒有資料。';
           return;
         }
 
-        msgElement.style.display = 'none';
-
-        data.forEach(game => {
-          const name = game['NAME'] || game['名稱'] || game['Name'];
-          if (!name) return;
-
-          const card = document.createElement('div');
-          card.className = 'card';
-
-          // 讀取圖片、人數、時間、描述
-          const imgPath = game['IMGUR'] || game['圖片網址'] || 'https://via.placeholder.com/250x250?text=No+Image';
-          const players = game['PLAYER'] || game['人數'] || '未標記';
-          const playtime = game['PLAYTIM'] || game['時間'] || '--';
-          const desc = game['DESCRIP'] || game['描述'] || '尚無說明。';
-          const bggId = game['BGGID'] || game['BGG_ID'];
-
-          let bggBtn = '';
-          if (bggId) {
-            bggBtn = `<a href="https://boardgamegeek.com/boardgame/${bggId}" target="_blank" class="bgg-link">BGG 頁面</a>`;
-          }
-
-          card.innerHTML = `
-            <div class="img-container">
-              <img src="${imgPath}" alt="${name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/250x250?text=No+Image'">
-            </div>
-            <div class="card-content">
-              <h3>${name}</h3>
-              <div class="info">👥 人數：${players} 人</div>
-              <div class="info">⏳ 時間：${playtime} 分鐘</div>
-              <div class="description">${desc}</div>
-            </div>
-            <div class="footer">
-              ${bggBtn}
-            </div>
-          `;
-          
-          container.appendChild(card);
-        });
+        document.getElementById('status-msg').style.display = 'none';
+        
+        createFilterButtons();
+        displayGames(allGames);
       }
     });
+
+    // 🔨 產生種類按鈕
+    function createFilterButtons() {
+      const container = document.getElementById('filter-container');
+      const types = new Set();
+      
+      allGames.forEach(game => {
+        const typeStr = game['GAMETY'] || game['種類'] || '';
+        if (typeStr) {
+          // 如果一格裡面有多個種類（用逗號或空白隔開），這裡可以進一步處理
+          // 目前先以整格內容作為一個種類
+          types.add(typeStr.trim());
+        }
+      });
+
+      types.forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.innerText = type;
+        btn.onclick = () => filterGames(type, btn);
+        container.appendChild(btn);
+      });
+    }
+
+    // 🔍 過濾邏輯
+    function filterGames(type, activeBtn) {
+      // 切換按鈕樣式
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+      } else {
+        document.querySelector('.filter-btn').classList.add('active');
+      }
+
+      const filtered = type === '全部' 
+        ? allGames 
+        : allGames.filter(game => (game['GAMETY'] || game['種類'] || '').trim() === type);
+      
+      displayGames(filtered);
+    }
+
+    // 🖼️ 渲染遊戲卡片
+    function displayGames(games) {
+      const container = document.getElementById('bg-list');
+      container.innerHTML = ''; // 清空現有卡片
+
+      games.forEach(game => {
+        const name = game['NAME'] || game['名稱'] || game['Name'];
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const imgPath = game['IMGUR'] || game['圖片網址'] || 'https://via.placeholder.com/250x250?text=No+Image';
+        const players = game['PLAYER'] || game['人數'] || '--';
+        const playtime = game['PLAYTIM'] || game['時間'] || '--';
+        const desc = game['DESCRIP'] || game['描述'] || '尚無說明。';
+        const bggId = game['BGGID'] || game['BGG_ID'];
+
+        let bggBtn = '';
+        if (bggId) {
+          bggBtn = `<a href="https://boardgamegeek.com/boardgame/${bggId}" target="_blank" class="bgg-link">BGG 頁面</a>`;
+        }
+
+        card.innerHTML = `
+          <div class="img-container">
+            <img src="${imgPath}" alt="${name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/250x250?text=No+Image'">
+          </div>
+          <div class="card-content">
+            <h3>${name}</h3>
+            <div class="info">👥 人數：${players} 人</div>
+            <div class="info">⏳ 時間：${playtime} 分鐘</div>
+            <div class="description">${desc}</div>
+          </div>
+          <div class="footer">
+            ${bggBtn}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
   </script>
 
 </body>
