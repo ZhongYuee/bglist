@@ -8,11 +8,11 @@
   <style>
     body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
     h1 { color: #333; margin-bottom: 20px; }
-    #filter-container { margin-bottom: 20px; display: none; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    #filter-container { margin-bottom: 30px; display: none; flex-wrap: wrap; justify-content: center; gap: 10px; }
     .filter-btn { padding: 8px 18px; background-color: #fff; border: 2px solid #4F5C48; color: #4F5C48; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.2s; }
     .filter-btn:hover, .filter-btn.active { background-color: #4F5C48; color: white; box-shadow: 0 4px 10px rgba(79, 92, 72, 0.3); }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
-    .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #eee; text-align: center; }
+    .card { background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #eee; text-align: center; }
     .card:hover { transform: translateY(-8px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
     .img-container { width: 100%; position: relative; padding-bottom: 100%; background-color: #fff; border-bottom: 1px solid #f5f5f5; }
     .card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; padding: 10px; box-sizing: border-box; }
@@ -22,20 +22,17 @@
     .info-icon { width: 22px; margin-right: 4px; text-align: center; }
     .description { margin-top: 8px; font-size: 0.85em; color: #7f8c8d; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
     #status-msg { margin: 20px; color: #4F5C48; font-weight: bold; font-size: 1.1em; }
+    #error-display { color: #d9534f; background: #f2dede; border: 1px solid #ebccd1; padding: 15px; border-radius: 8px; display: none; margin: 20px auto; max-width: 600px; }
 
     @media (max-width: 600px) {
-      body { padding: 8px; } 
-      h1 { font-size: 1.4em; margin-bottom: 12px; }
-      #filter-container { gap: 6px; margin-bottom: 15px; display: none; }
-      .filter-btn { padding: 5px 12px; font-size: 0.8em; }
-      .grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-      .card { border-radius: 8px; }
-      .card-content { padding: 8px; } 
-      .card h3 { font-size: 0.95em; margin: 0 0 4px; } 
+      body { padding: 10px; } 
+      h1 { font-size: 1.5em; margin-bottom: 15px; }
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .card-content { padding: 10px; } 
+      .card h3 { font-size: 1em; margin: 0 0 4px; } 
       .info-row { font-size: 0.75em; margin-bottom: 2px; } 
-      .description { font-size: 0.7em; margin-top: 4px; -webkit-line-clamp: 2; }
-      .img-container { border-bottom: none; }
-      .card img { padding: 6px; }
+      .description { font-size: 0.75em; -webkit-line-clamp: 2; }
+      .filter-btn { padding: 6px 12px; font-size: 0.85em; } 
     }
   </style>
 </head>
@@ -46,11 +43,94 @@
     <button class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
   </div>
   <div id="status-msg">正在翻找桌遊櫃...</div>
+  <div id="error-display"></div>
   <div class="grid" id="bg-list"></div>
 
   <script>
-    // 🏆 你的 Google CSV 網址
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv';
+    // 加上時間戳記避免快取問題
+    const rawUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv';
+    const csvUrl = `${rawUrl}&t=${new Date().getTime()}`; 
+
     const fallbackImg = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='100%25' height='100%25' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-weight='bold' font-size='20' text-anchor='middle' dominant-baseline='middle' fill='%23aaaaaa'%3E尚無圖片%3C/text%3E%3C/svg%3E";
 
-    function init
+    async function loadBoardGames() {
+      try {
+        const response = await fetch(csvUrl);
+        if (!response.ok) throw new Error("連線失敗，請檢查 Google 試算表是否已發佈到網路。");
+        
+        const csvText = await response.text();
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: h => h.replace(/^\uFEFF/, '').trim().toUpperCase(),
+          complete: function(results) {
+            const data = results.data;
+            window.allGames = data.filter(g => g.NAME && g.NAME.trim() !== '');
+
+            if (window.allGames.length === 0) {
+              showError("讀取成功但內容為空。請確認試算表第一列標題是否有 NAME 欄位。");
+              return;
+            }
+
+            document.getElementById('status-msg').style.display = 'none';
+            document.getElementById('filter-container').style.display = 'flex';
+            renderButtons();
+            displayGames(window.allGames);
+          }
+        });
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    function showError(msg) {
+      const errBox = document.getElementById('error-display');
+      errBox.innerText = "❌ 發生錯誤：" + msg;
+      errBox.style.display = 'block';
+      document.getElementById('status-msg').style.display = 'none';
+    }
+
+    function renderButtons() {
+      const container = document.getElementById('filter-container');
+      const types = new Set();
+      window.allGames.forEach(g => {
+        if (g.TYPE) g.TYPE.split(/[,，/ ]+/).forEach(t => t.trim() && types.add(t.trim()));
+      });
+      Array.from(types).sort().forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.innerText = type;
+        btn.onclick = (e) => filterGames(type, e.target);
+        container.appendChild(btn);
+      });
+    }
+
+    function filterGames(type, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filtered = type === '全部' ? window.allGames : window.allGames.filter(g => (g.TYPE || '').includes(type));
+      displayGames(filtered);
+    }
+
+    function displayGames(games) {
+      const container = document.getElementById('bg-list');
+      container.innerHTML = games.map(g => `
+        <div class="card">
+          <div class="img-container">
+            <img src="${g.IMAGE || fallbackImg}" alt="${g.NAME}" onerror="this.onerror=null; this.src='${fallbackImg}'">
+          </div>
+          <div class="card-content">
+            <h3>${g.NAME}</h3>
+            <div class="info-row"><span class="info-icon">👥</span> 人數：${g.PLAYER || '--'} 人</div>
+            <div class="info-row"><span class="info-icon">⏳</span> 時間：${g.TIME || '--'} 分鐘</div>
+            <div class="description">${g.DESCRIPTION || g.DESCRIP || '尚無內容介紹。'}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 啟動翻找
+    window.onload = loadBoardGames;
+  </script>
+</body>
+</html>
