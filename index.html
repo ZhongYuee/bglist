@@ -19,8 +19,6 @@
     .card-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; }
     .card h3 { margin: 0 0 6px; font-size: 1.2em; color: #2c3e50; line-height: 1.3; } 
     .info-row { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; font-size: 0.9em; color: #555; } 
-    /* 調整資訊間的空白間距 */
-    .info-spacer { display: inline-block; width: 1.5em; } 
     .description { margin-top: 8px; font-size: 0.85em; color: #7f8c8d; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
     #status-msg { margin: 20px; color: #4F5C48; font-weight: bold; font-size: 1.1em; }
 
@@ -126,9 +124,7 @@
           <div class="card-content">
             <h3>${g.NAME}</h3>
             <div class="info-row">
-              👥 ${g.PLAYER || '--'} 人
-              <span class="info-spacer"></span>
-              ⏳ ${g.TIME || '--'} 分鐘
+              👥 ${g.PLAYER || '--'} 人 ⏳ ${g.TIME || '--'} 分鐘
             </div>
             <div class="description">${g.DESCRIPTION || g.DESCRIP || ''}</div>
           </div>
