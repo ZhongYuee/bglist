@@ -8,181 +8,132 @@
   <style>
     body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
     h1 { color: #333; margin-bottom: 20px; }
-    
-    #filter-container {
-      margin-bottom: 30px;
-      display: none; 
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-    }
-    .filter-btn {
-      padding: 8px 18px;
-      background-color: #fff;
-      border: 2px solid #4F5C48; 
-      color: #4F5C48;          
-      border-radius: 25px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: all 0.2s ease;
-    }
-    .filter-btn:hover, .filter-btn.active {
-      background-color: #4F5C48; 
-      color: white;
-      box-shadow: 0 4px 10px rgba(79, 92, 72, 0.3); 
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .card {
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transition: all 0.3s ease;
-      border: 1px solid #eee;
-      text-align: center;
-    }
+    #filter-container { margin-bottom: 30px; display: none; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .filter-btn { padding: 8px 18px; background-color: #fff; border: 2px solid #4F5C48; color: #4F5C48; border-radius: 25px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+    .filter-btn.active { background-color: #4F5C48; color: white; box-shadow: 0 4px 10px rgba(79,92,72,0.3); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
+    .card { background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #eee; text-align: center; }
     .card:hover { transform: translateY(-8px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
-    
-    .img-container {
-      width: 100%;
-      position: relative;
-      padding-bottom: 100%;
-      background-color: #fff;
-      border-bottom: 1px solid #f5f5f5;
-    }
-    .card img {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain; 
-      padding: 10px; 
-      box-sizing: border-box;
-    }
-
-    .card-content { 
-      padding: 15px; 
-      flex-grow: 1; 
-      display: flex; 
-      flex-direction: column; 
-      justify-content: flex-start; 
-    }
+    .img-container { width: 100%; position: relative; padding-bottom: 100%; background-color: #fff; border-bottom: 1px solid #f5f5f5; }
+    .card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; padding: 10px; box-sizing: border-box; }
+    .card-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; }
     .card h3 { margin: 0 0 6px; font-size: 1.2em; color: #2c3e50; line-height: 1.3; } 
     .info-row { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; font-size: 0.9em; color: #555; } 
-    .info-icon { width: 22px; margin-right: 4px; text-align: center; }
-
-    /* 📝 描述區域：支援換行，並移除行數限制 */
-    .description { 
-      margin-top: 8px; 
-      font-size: 0.85em; 
-      color: #7f8c8d; 
-      line-height: 1.5;
-      margin-bottom: 5px;
-      text-align: center;
-      /* 關鍵設定：保留換行符號 */
-      white-space: pre-wrap; 
-      word-wrap: break-word;
-    }
-
+    .description { margin-top: 8px; font-size: 0.85em; color: #7f8c8d; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
     #status-msg { margin: 20px; color: #4F5C48; font-weight: bold; font-size: 1.1em; }
 
-    /* 手機版 RWD 專屬設定 */
     @media (max-width: 600px) {
-      body { padding: 8px; } 
-      h1 { font-size: 1.4em; margin-bottom: 12px; }
+      body { padding: 8px; } h1 { font-size: 1.4em; margin-bottom: 12px; }
       #filter-container { gap: 6px; margin-bottom: 15px; }
-      .filter-btn { padding: 5px 12px; font-size: 0.8em; }
+      .filter-btn { padding: 5px 12px; font-size: 0.85em; }
       .grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-      .card { border-radius: 8px; }
-      .card-content { padding: 10px; } 
-      .card h3 { font-size: 0.95em; margin: 0 0 4px; } 
-      .info-row { font-size: 0.75em; margin-bottom: 2px; } 
-      .description { font-size: 0.75em; margin-top: 6px; }
-      .img-container { border-bottom: none; }
-      .card img { padding: 6px; }
+      .card h3 { font-size: 0.95em; } .info-row { font-size: 0.75em; }
+      .description { font-size: 0.75em; }
     }
   </style>
 </head>
 <body>
 
   <h1>🎲 重雨桌遊櫃 🎲</h1>
-  
   <div id="filter-container">
     <button class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
   </div>
-
-  <div id="status-msg">正在翻找桌遊櫃...</div>
+  <div id="status-msg">正在翻找桌遊櫃...<br><small id="retry-msg" style="font-weight: normal; font-size: 0.8em; color: #999;"></small></div>
   <div class="grid" id="bg-list"></div>
 
   <script>
-    // 加上隨機參數避免快取
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv&t=' + new Date().getTime(); 
+    const baseCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv';
+    const fallbackImg = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='100%25' height='100%25' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-weight='bold' font-size='20' text-anchor='middle' dominant-baseline='middle' fill='%23aaaaaa'%3E尚無圖片%3C/text%3E%3C/svg%3E";
     let allGames = [];
 
-    // 🖼️ 內建尚無圖片產生器
-    const fallbackImg = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='100%25' height='100%25' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-weight='bold' font-size='20' text-anchor='middle' dominant-baseline='middle' fill='%23aaaaaa'%3E尚無圖片%3C/text%3E%3C/svg%3E";
-
-    fetch(csvUrl)
-      .then(response => {
-        if (!response.ok) throw new Error(`網路回應異常`);
-        return response.text(); 
-      })
-      .then(csvText => {
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          transformHeader: function(header) {
-            return header.replace(/^\uFEFF/, '').trim().toUpperCase();
-          },
-          complete: function(results) {
-            const data = results.data;
-            allGames = data.filter(game => game.NAME && game.NAME.trim() !== '');
-
-            if (allGames.length === 0) {
-              document.getElementById('status-msg').innerText = '讀取成功，但找不到任何有效桌遊資料。';
-              return;
-            }
-
-            document.getElementById('status-msg').style.display = 'none';
-            document.getElementById('filter-container').style.display = 'flex';
-            
-            createFilterButtons();
-            displayGames(allGames);
-          }
-        });
-      })
-      .catch(error => {
-        console.error(error);
-        document.getElementById('status-msg').innerText = '❌ 連線發生錯誤，請重新整理網頁。';
-      });
-
-    function createFilterButtons() {
-      const container = document.getElementById('filter-container');
-      const types = new Set();
+    async function startLoading() {
+      const retryMsg = document.getElementById('retry-msg');
       
-      allGames.forEach(game => {
-        const typeStr = game.TYPE || '';
-        if (typeStr) {
-          typeStr.split(/[,，/ ]+/).forEach(t => {
-            if(t.trim() !== '') types.add(t.trim());
-          });
+      // 嘗試方法 A: Fetch (現代最快)
+      try {
+        retryMsg.innerText = "(嘗試建立快速連線...)";
+        const freshUrl = `${baseCsvUrl}&nocache=${new Date().getTime()}`;
+        const response = await fetch(freshUrl);
+        if (response.ok) {
+          const text = await response.text();
+          parseAndDisplay(text);
+          return;
         }
-      });
+      } catch (e) { console.log("Fetch failed, switching..."); }
 
-      Array.from(types).sort().forEach(type => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn';
-        btn.innerText = type;
-        btn.onclick = () => filterGames(type, btn);
-        container.appendChild(btn);
+      // 嘗試方法 B: PapaParse Download (相容性最強)
+      retryMsg.innerText = "(快速連線受阻，切換穩定模式...)";
+      Papa.parse(baseCsvUrl, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: h => h.replace(/^\uFEFF/, '').trim().toUpperCase(),
+        complete: (results) => {
+          if (results.data && results.data.length > 0) {
+            allGames = results.data.filter(g => g.NAME);
+            renderAll();
+          } else {
+            retryMsg.innerText = "❌ 翻找失敗，請確認試算表是否已發佈到網路。";
+          }
+        },
+        error: () => { retryMsg.innerText = "❌ 網路逾時，請檢查連線或稍後再試。"; }
       });
     }
+
+    function parseAndDisplay(csvText) {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: h => h.replace(/^\uFEFF/, '').trim().toUpperCase(),
+        complete: (results) => {
+          allGames = results.data.filter(g => g.NAME);
+          renderAll();
+        }
+      });
+    }
+
+    function renderAll() {
+      document.getElementById('status-msg').style.display = 'none';
+      document.getElementById('filter-container').style.display = 'flex';
+      
+      const container = document.getElementById('filter-container');
+      const types = new Set();
+      allGames.forEach(g => {
+        if (g.TYPE) g.TYPE.split(/[,，/ ]+/).forEach(t => t.trim() && types.add(t.trim()));
+      });
+      Array.from(types).sort().forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn'; btn.innerText = type;
+        btn.onclick = (e) => filterGames(type, e.target);
+        container.appendChild(btn);
+      });
+      displayGames(allGames);
+    }
+
+    function filterGames(type, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filtered = type === '全部' ? allGames : allGames.filter(g => (g.TYPE || '').includes(type));
+      displayGames(filtered);
+    }
+
+    function displayGames(games) {
+      const container = document.getElementById('bg-list');
+      container.innerHTML = games.map(g => `
+        <div class="card">
+          <div class="img-container">
+            <img src="${g.IMAGE || fallbackImg}" alt="${g.NAME}" onerror="this.onerror=null; this.src='${fallbackImg}'">
+          </div>
+          <div class="card-content">
+            <h3>${g.NAME}</h3>
+            <div class="info-row">👥 ${g.PLAYER || '--'} 人 | ⏳ ${g.TIME || '--'} 分鐘</div>
+            <div class="description">${g.DESCRIPTION || g.DESCRIP || ''}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.onload = startLoading;
+  </script>
+</body>
+</html>
