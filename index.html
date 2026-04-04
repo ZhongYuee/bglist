@@ -10,7 +10,7 @@
     h1 { color: #333; margin-bottom: 20px; }
     #filter-container { margin-bottom: 30px; display: none; flex-wrap: wrap; justify-content: center; gap: 10px; }
     .filter-btn { padding: 8px 18px; background-color: #fff; border: 2px solid #4F5C48; color: #4F5C48; border-radius: 25px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
-    .filter-btn.active { background-color: #4F5C48; color: white; box-shadow: 0 4px 10px rgba(79,92,72,0.3); }
+    .filter-btn:hover, .filter-btn.active { background-color: #4F5C48; color: white; box-shadow: 0 4px 10px rgba(79,92,72,0.3); }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
     .card { background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #eee; text-align: center; }
     .card:hover { transform: translateY(-8px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
@@ -19,6 +19,8 @@
     .card-content { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; }
     .card h3 { margin: 0 0 6px; font-size: 1.2em; color: #2c3e50; line-height: 1.3; } 
     .info-row { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; font-size: 0.9em; color: #555; } 
+    /* 調整資訊間的空白間距 */
+    .info-spacer { display: inline-block; width: 1.5em; } 
     .description { margin-top: 8px; font-size: 0.85em; color: #7f8c8d; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
     #status-msg { margin: 20px; color: #4F5C48; font-weight: bold; font-size: 1.1em; }
 
@@ -38,7 +40,7 @@
   <div id="filter-container">
     <button class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
   </div>
-  <div id="status-msg">正在翻找桌遊櫃...<br><small id="retry-msg" style="font-weight: normal; font-size: 0.8em; color: #999;"></small></div>
+  <div id="status-msg">正在翻找桌遊櫃...</div>
   <div class="grid" id="bg-list"></div>
 
   <script>
@@ -47,22 +49,21 @@
     let allGames = [];
 
     async function startLoading() {
-      const retryMsg = document.getElementById('retry-msg');
-      
-      // 嘗試方法 A: Fetch (現代最快)
+      const freshUrl = `${baseCsvUrl}&t=${new Date().getTime()}`;
       try {
-        retryMsg.innerText = "(嘗試建立快速連線...)";
-        const freshUrl = `${baseCsvUrl}&nocache=${new Date().getTime()}`;
         const response = await fetch(freshUrl);
         if (response.ok) {
           const text = await response.text();
           parseAndDisplay(text);
-          return;
+        } else {
+          loadViaPapa();
         }
-      } catch (e) { console.log("Fetch failed, switching..."); }
+      } catch (e) {
+        loadViaPapa();
+      }
+    }
 
-      // 嘗試方法 B: PapaParse Download (相容性最強)
-      retryMsg.innerText = "(快速連線受阻，切換穩定模式...)";
+    function loadViaPapa() {
       Papa.parse(baseCsvUrl, {
         download: true,
         header: true,
@@ -72,11 +73,8 @@
           if (results.data && results.data.length > 0) {
             allGames = results.data.filter(g => g.NAME);
             renderAll();
-          } else {
-            retryMsg.innerText = "❌ 翻找失敗，請確認試算表是否已發佈到網路。";
           }
-        },
-        error: () => { retryMsg.innerText = "❌ 網路逾時，請檢查連線或稍後再試。"; }
+        }
       });
     }
 
@@ -93,7 +91,8 @@
     }
 
     function renderAll() {
-      document.getElementById('status-msg').style.display = 'none';
+      const status = document.getElementById('status-msg');
+      if (status) status.style.display = 'none';
       document.getElementById('filter-container').style.display = 'flex';
       
       const container = document.getElementById('filter-container');
@@ -126,7 +125,11 @@
           </div>
           <div class="card-content">
             <h3>${g.NAME}</h3>
-            <div class="info-row">👥 ${g.PLAYER || '--'} 人 | ⏳ ${g.TIME || '--'} 分鐘</div>
+            <div class="info-row">
+              👥 ${g.PLAYER || '--'} 人
+              <span class="info-spacer"></span>
+              ⏳ ${g.TIME || '--'} 分鐘
+            </div>
             <div class="description">${g.DESCRIPTION || g.DESCRIP || ''}</div>
           </div>
         </div>
