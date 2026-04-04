@@ -6,22 +6,22 @@
   <title>重雨桌遊櫃</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
-    body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 10px; text-align: center; }
-    h1 { color: #333; margin-bottom: 10px; }
+    body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
+    h1 { color: #333; margin-bottom: 20px; }
     
     #filter-container {
-      margin-bottom: 15px; 
+      margin-bottom: 30px;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 5px; 
+      gap: 10px;
     }
     .filter-btn {
-      padding: 6px 14px; 
+      padding: 8px 18px;
       background-color: #fff;
       border: 2px solid #4F5C48; 
       color: #4F5C48;          
-      border-radius: 20px;
+      border-radius: 25px;
       cursor: pointer;
       font-weight: bold;
       transition: all 0.2s ease;
@@ -35,72 +35,73 @@
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 12px; 
+      gap: 25px;
       max-width: 1200px;
       margin: 0 auto;
     }
     .card {
       background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.06);
       overflow: hidden;
       display: flex;
       flex-direction: column;
       transition: all 0.3s ease;
       border: 1px solid #eee;
-      text-align: left;
+      /* 🖼️ 資訊全部置中 */
+      text-align: center;
     }
-    .card:hover { transform: translateY(-4px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+    .card:hover { transform: translateY(-8px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
     
+    /* 🖼️ 圖片 1:1 (正方形) 空間設定 */
     .img-container {
       width: 100%;
-      height: 200px; 
+      /* 關鍵：利用 Padding-bottom 技巧產生完美正方形空間 */
+      position: relative;
+      padding-bottom: 100%; /* 高度等於寬度，即 1:1 */
       background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 5px; 
-      box-sizing: border-box;
       border-bottom: 1px solid #f5f5f5;
     }
     .card img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      /* 關鍵：object-fit: contain 確保不裁切，完整顯示原圖 */
+      object-fit: contain; 
+      padding: 10px; /* 內圍預留一點留白空間，看起來更舒適 */
+      box-sizing: border-box;
     }
 
-    .card-content { padding: 10px; flex-grow: 1; } 
-    .card h3 { margin: 0 0 6px; font-size: 1.15em; color: #2c3e50; line-height: 1.3; } 
-    .info-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.9em; color: #555; } 
-    .info-icon { width: 22px; margin-right: 4px; text-align: center; } 
+    .card-content { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+    .card h3 { margin: 0 0 12px; font-size: 1.25em; color: #2c3e50; line-height: 1.3; }
+    .info-row { display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-size: 0.95em; color: #555; }
+    .info-icon { width: 22px; margin-right: 8px; text-align: center; }
 
     .description { 
-      margin-top: 6px; 
-      font-size: 0.85em; 
+      margin-top: 12px; 
+      font-size: 0.9em; 
       color: #7f8c8d; 
-      line-height: 1.5;
+      line-height: 1.6;
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
 
-    .footer { padding: 8px 10px 10px; text-align: center; } 
+    .footer { padding: 15px 20px 20px; text-align: center; }
     .bgg-link {
       display: block;
-      padding: 6px; 
+      padding: 10px;
       background-color: #4F5C48; 
       color: white;
       text-decoration: none;
-      border-radius: 6px;
-      font-size: 0.85em;
+      border-radius: 8px;
+      font-size: 0.9em;
       font-weight: bold;
     }
     .bgg-link:hover { background-color: #3d4738; } 
-    #status-msg { margin: 10px; color: #666; font-style: italic; }
-    
-    /* 除錯訊息區塊樣式 */
-    #debug-box { color: red; font-weight: bold; margin: 20px; padding: 10px; border: 2px dashed red; display: none; background: #fff0f0; }
+    #status-msg { margin: 20px; color: #666; font-style: italic; }
   </style>
 </head>
 <body>
@@ -112,19 +113,9 @@
   </div>
 
   <div id="status-msg">正在翻找桌遊櫃...</div>
-  <div id="debug-box"></div>
-  
   <div class="grid" id="bg-list"></div>
 
   <script>
-    // 捕捉網頁全域錯誤
-    window.onerror = function(msg, url, line) {
-      const debugBox = document.getElementById('debug-box');
-      debugBox.style.display = 'block';
-      debugBox.innerHTML += `發生錯誤：${msg} (行號 ${line})<br>`;
-      document.getElementById('status-msg').style.display = 'none';
-    };
-
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv'; 
     let allGames = [];
 
@@ -132,48 +123,22 @@
       download: true,
       header: true,
       skipEmptyLines: true,
-      // 🛡️ 終極防呆機制：強制轉大寫、清除前後空白、清除 Google 試算表的隱藏 BOM 亂碼
       transformHeader: function(header) {
+        // 🛡️ 防護機制：轉大寫、清除前後空白、清除隱藏亂碼
         return header.replace(/^\uFEFF/, '').trim().toUpperCase();
       },
       complete: function(results) {
-        try {
-          const debugBox = document.getElementById('debug-box');
-          const data = results.data;
-          
-          // 檢查有沒有讀到任何資料
-          if (data.length === 0) {
-            debugBox.style.display = 'block';
-            debugBox.innerHTML = '表單內沒有資料！請確認 Google 試算表的分頁設定。';
-            document.getElementById('status-msg').style.display = 'none';
-            return;
-          }
-
-          // 抓取具有 NAME 欄位的資料
-          allGames = data.filter(game => game.NAME);
-          
-          if (allGames.length === 0) {
-            // 如果找不到 NAME，直接把程式看到的標題印出來給我們看！
-            const actualHeaders = Object.keys(data[0]).join(', ');
-            debugBox.style.display = 'block';
-            debugBox.innerHTML = `讀不到 NAME 欄位。<br>程式目前看到的標題是：[ ${actualHeaders} ]<br>請檢查是否與表單一致。`;
-            document.getElementById('status-msg').style.display = 'none';
-            return;
-          }
-
-          document.getElementById('status-msg').style.display = 'none';
-          createFilterButtons();
-          displayGames(allGames);
-        } catch (error) {
-          // 捕捉任何 JavaScript 執行錯誤
-          document.getElementById('debug-box').style.display = 'block';
-          document.getElementById('debug-box').innerHTML = `處理資料時發生錯誤：${error}`;
+        // 直接過濾無效資料
+        allGames = results.data.filter(game => game.NAME && game.NAME.trim() !== '');
+        
+        if (allGames.length === 0) {
+          document.getElementById('status-msg').innerText = '讀取成功，但找不到任何有效桌遊資料。';
+          return;
         }
-      },
-      error: function(error) {
-        // 捕捉下載 CSV 失敗的錯誤
-        document.getElementById('debug-box').style.display = 'block';
-        document.getElementById('debug-box').innerHTML = `下載表單失敗：${error}`;
+
+        document.getElementById('status-msg').style.display = 'none';
+        createFilterButtons();
+        displayGames(allGames);
       }
     });
 
@@ -219,7 +184,7 @@
 
       games.forEach(game => {
         const name = game.NAME;
-        const imgPath = game.IMAGE || 'https://via.placeholder.com/250x250?text=No+Image';
+        const imgPath = game.IMAGE || 'https://via.placeholder.com/300x300?text=No+Image';
         const players = game.PLAYER || '--';
         const time = game.TIME || '--';
         const desc = game.DESCRIPTION || game.DESCRIP || '尚無內容介紹。';
@@ -232,7 +197,7 @@
 
         card.innerHTML = `
           <div class="img-container">
-            <img src="${imgPath}" alt="${name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/250x250?text=Image+Error'">
+            <img src="${imgPath}" alt="${name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x300?text=Image+Error'">
           </div>
           <div class="card-content">
             <h3>${name}</h3>
