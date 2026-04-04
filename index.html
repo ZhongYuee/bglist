@@ -10,9 +10,9 @@
     h1 { color: #333; margin-bottom: 30px; }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 稍微加寬一點，好容納描述 */
       gap: 25px;
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
     }
     .card {
@@ -20,23 +20,49 @@
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       overflow: hidden;
-      padding-bottom: 20px;
+      display: flex;
+      flex-direction: column;
       transition: all 0.3s ease;
       border: 1px solid #eee;
+      text-align: left; /* 資料靠左對齊比較好閱讀 */
     }
     .card:hover { transform: translateY(-8px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-    .card img {
+    
+    /* 🖼️ 圖片顯示修正：改為 contain 確保不裁切，並留白 */
+    .img-container {
       width: 100%;
-      height: 220px;
-      object-fit: cover;
-      background-color: #f0f0f0;
+      height: 250px;
+      background-color: #fff; /* 比例不合時的留白顏色 */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid #f0f0f0;
     }
-    .card h3 { margin: 15px 10px 8px; font-size: 1.15em; color: #2c3e50; }
-    .card p { margin: 5px 0; color: #7f8c8d; font-size: 0.95em; }
+    .card img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain; /* 關鍵：完整顯示圖片，不裁切 */
+    }
+
+    .card-content { padding: 15px; flex-grow: 1; }
+    .card h3 { margin: 0 0 10px; font-size: 1.2em; color: #2c3e50; }
+    .info { font-size: 0.9em; color: #666; margin-bottom: 5px; }
+    .description { 
+      margin-top: 10px; 
+      font-size: 0.85em; 
+      color: #7f8c8d; 
+      line-height: 1.5;
+      /* 限制描述高度，太長會變省略號 */
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .footer { padding: 15px; border-top: 1px solid #f9f9f9; text-align: center; }
     .bgg-link {
       display: inline-block;
-      margin-top: 12px;
-      padding: 8px 16px;
+      padding: 8px 20px;
       background-color: #e67e22;
       color: white;
       text-decoration: none;
@@ -51,11 +77,10 @@
 <body>
 
   <h1>🎲 我的桌遊收藏</h1>
-  <div id="status-msg">正在從 Google 試算表同步資料...</div>
+  <div id="status-msg">正在從 Google 試算表同步最新資料...</div>
   <div class="grid" id="bg-list"></div>
 
   <script>
-    // 你的 CSV 網址保持不變
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv'; 
 
     Papa.parse(csvUrl, {
@@ -75,17 +100,18 @@
         msgElement.style.display = 'none';
 
         data.forEach(game => {
-          // 加入了你截圖中的全大寫 NAME
-          const name = game['名稱'] || game['Name'] || game['NAME'] || game['遊戲名稱'];
+          const name = game['NAME'] || game['名稱'] || game['Name'];
           if (!name) return;
 
           const card = document.createElement('div');
           card.className = 'card';
 
-          // 對應你截圖中的 IMGUR 與 PLAYER
-          const imgPath = game['圖片網址'] || game['Image'] || game['IMGUR'] || 'https://via.placeholder.com/220x220?text=No+Image';
-          const players = game['人數'] || game['Players'] || game['PLAYER'] || '未標記';
-          const bggId = game['BGG_ID'] || game['BGGID'];
+          // 讀取圖片、人數、時間、描述
+          const imgPath = game['IMGUR'] || game['圖片網址'] || 'https://via.placeholder.com/250x250?text=No+Image';
+          const players = game['PLAYER'] || game['人數'] || '未標記';
+          const playtime = game['PLAYTIM'] || game['時間'] || '--';
+          const desc = game['DESCRIP'] || game['描述'] || '尚無說明。';
+          const bggId = game['BGGID'] || game['BGG_ID'];
 
           let bggBtn = '';
           if (bggId) {
@@ -93,20 +119,22 @@
           }
 
           card.innerHTML = `
-            <img src="${imgPath}" alt="${name}" onerror="this.src='https://via.placeholder.com/220x220?text=圖片連結失效'">
-            <h3>${name}</h3>
-            <p>👥 人數：${players}</p>
-            ${bggBtn}
+            <div class="img-container">
+              <img src="${imgPath}" alt="${name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/250x250?text=No+Image'">
+            </div>
+            <div class="card-content">
+              <h3>${name}</h3>
+              <div class="info">👥 人數：${players} 人</div>
+              <div class="info">⏳ 時間：${playtime} 分鐘</div>
+              <div class="description">${desc}</div>
+            </div>
+            <div class="footer">
+              ${bggBtn}
+            </div>
           `;
           
           container.appendChild(card);
         });
-      },
-      error: function(err) {
-        document.getElementById('status-msg').innerHTML = 
-          `<span style="color:red;">讀取失敗！</span><br>原因：${err}<br><br>` +
-          `💡 提示：如果你是在電腦直接點開 HTML 檔案，瀏覽器會因為安全機制擋住請求。<br>` +
-          `請嘗試將程式碼貼到 <a href="https://codepen.io/pen/" target="_blank">CodePen</a> 測試，或是上傳到 GitHub Pages。`;
       }
     });
   </script>
