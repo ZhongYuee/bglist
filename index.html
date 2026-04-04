@@ -92,32 +92,18 @@
       margin-bottom: 5px;
     }
 
-    #status-msg { margin: 20px; color: #666; font-style: italic; }
-    /* 除錯訊息區塊樣式 */
+    #status-msg { margin: 20px; color: #4F5C48; font-weight: bold; font-size: 1.1em; }
     #debug-box { color: red; font-weight: bold; margin: 20px auto; padding: 10px; border: 2px dashed red; display: none; background: #fff0f0; max-width: 800px; text-align: left; }
 
     /* 手機版 RWD 專屬設定 */
     @media (max-width: 600px) {
       body { padding: 10px; } 
-      
-      .grid {
-        grid-template-columns: repeat(2, 1fr); 
-        gap: 10px; 
-      }
-      
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
       .card-content { padding: 10px; } 
-      
       .card h3 { font-size: 1em; margin: 0 0 4px; } 
-      
       .info-row { font-size: 0.75em; margin-bottom: 2px; } 
       .info-icon { width: 16px; margin-right: 2px; }
-      
-      .description { 
-        font-size: 0.75em; 
-        margin-top: 6px; 
-        -webkit-line-clamp: 2; 
-      }
-      
+      .description { font-size: 0.75em; margin-top: 6px; -webkit-line-clamp: 2; }
       #filter-container { gap: 6px; margin-bottom: 20px; }
       .filter-btn { padding: 6px 12px; font-size: 0.85em; } 
     }
@@ -131,67 +117,66 @@
     <button class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
   </div>
 
-  <div id="status-msg">正在翻找桌遊櫃...</div>
+  <div id="status-msg">🔍 系統啟動中...</div>
   <div id="debug-box"></div>
   <div class="grid" id="bg-list"></div>
 
   <script>
-    // 捕捉全域錯誤
-    window.onerror = function(msg, url, line) {
-      const debugBox = document.getElementById('debug-box');
-      debugBox.style.display = 'block';
-      debugBox.innerHTML += `發生全域錯誤：${msg} (行號 ${line})<br>`;
-      document.getElementById('status-msg').style.display = 'none';
-    };
-
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv'; 
     let allGames = [];
+    const statusMsg = document.getElementById('status-msg');
+    const debugBox = document.getElementById('debug-box');
 
-    Papa.parse(csvUrl, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: function(header) {
-        return header.replace(/^\uFEFF/, '').trim().toUpperCase();
-      },
-      complete: function(results) {
-        try {
-          const debugBox = document.getElementById('debug-box');
-          const data = results.data;
+    // 步驟 1：向 Google 發出直連請求
+    statusMsg.innerText = '📡 [1/3] 正在向 Google 試算表連線索取資料...';
 
-          if (data.length === 0) {
-            debugBox.style.display = 'block';
-            debugBox.innerHTML = '表單內沒有資料！請確認 Google 試算表是否有內容，或是發佈到了空白的分頁。';
-            document.getElementById('status-msg').style.display = 'none';
-            return;
-          }
-
-          allGames = data.filter(game => game.NAME && game.NAME.trim() !== '');
-
-          if (allGames.length === 0) {
-            const actualHeaders = Object.keys(data[0]).join(', ');
-            debugBox.style.display = 'block';
-            debugBox.innerHTML = `讀不到 NAME 欄位！<br>我們預期要找的標題是：[NAME, TYPE, TIME, PLAYER, IMAGE, DESCRIPTION]<br>程式實際看到的標題是：[ ${actualHeaders} ]<br>👉 請檢查試算表的標題是否與我們預期的一模一樣。`;
-            document.getElementById('status-msg').style.display = 'none';
-            return;
-          }
-
-          document.getElementById('status-msg').style.display = 'none';
-          document.getElementById('filter-container').style.display = 'flex';
-          
-          createFilterButtons();
-          displayGames(allGames);
-
-        } catch (error) {
-          document.getElementById('debug-box').style.display = 'block';
-          document.getElementById('debug-box').innerHTML = `處理資料時發生錯誤：${error}`;
+    fetch(csvUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`網路回應異常 (狀態碼: ${response.status})`);
         }
-      },
-      error: function(error) {
-        document.getElementById('debug-box').style.display = 'block';
-        document.getElementById('debug-box').innerHTML = `下載表單失敗：${error}`;
-      }
-    });
+        return response.text(); // 成功拿到資料，準備解碼
+      })
+      .then(csvText => {
+        // 步驟 2：解析資料
+        statusMsg.innerText = '⚙️ [2/3] 資料下載完成！正在解析桌遊清單...';
+        
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: function(header) {
+            return header.replace(/^\uFEFF/, '').trim().toUpperCase();
+          },
+          complete: function(results) {
+            // 步驟 3：畫面渲染
+            statusMsg.innerText = '📦 [3/3] 正在將桌遊上架到櫃子裡...';
+            
+            const data = results.data;
+            allGames = data.filter(game => game.NAME && game.NAME.trim() !== '');
+
+            if (allGames.length === 0) {
+              const actualHeaders = data.length > 0 ? Object.keys(data[0]).join(', ') : '無標題';
+              debugBox.style.display = 'block';
+              debugBox.innerHTML = `⚠️ 找不到有效的桌遊名稱 (NAME 欄位)。<br>程式目前讀到的標題有：[ ${actualHeaders} ]`;
+              statusMsg.style.display = 'none';
+              return;
+            }
+
+            // 大功告成，隱藏進度條，顯示按鈕跟卡片
+            statusMsg.style.display = 'none';
+            document.getElementById('filter-container').style.display = 'flex';
+            createFilterButtons();
+            displayGames(allGames);
+          }
+        });
+      })
+      .catch(error => {
+        // 如果有任何網路阻擋，這裡絕對會抓出來
+        debugBox.style.display = 'block';
+        debugBox.innerHTML = `❌ 連線發生錯誤：<br>${error.message}<br>這可能是瀏覽器阻擋或是網址權限的問題。`;
+        statusMsg.style.display = 'none';
+      });
+
 
     function createFilterButtons() {
       const container = document.getElementById('filter-container');
@@ -240,4 +225,24 @@
         const time = game.TIME || '--';
         const desc = game.DESCRIPTION || game.DESCRIP || '尚無內容介紹。';
 
-        const card =
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        card.innerHTML = `
+          <div class="img-container">
+            <img src="${imgPath}" alt="${name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x300?text=Image+Error'">
+          </div>
+          <div class="card-content">
+            <h3>${name}</h3>
+            <div class="info-row"><span class="info-icon">👥</span> 人數：${players} 人</div>
+            <div class="info-row"><span class="info-icon">⏳</span> 時間：${time} 分鐘</div>
+            <div class="description">${desc}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+  </script>
+
+</body>
+</html>
