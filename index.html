@@ -108,4 +108,107 @@
     <button class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
   </div>
 
-  <div id="status-msg">正在翻找桌遊
+  <div id="status-msg">正在翻找桌遊櫃...</div>
+  <div class="grid" id="bg-list"></div>
+
+  <script>
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv'; 
+    let allGames = [];
+
+    Papa.parse(csvUrl, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: function(header) {
+        return header.trim();
+      },
+      complete: function(results) {
+        allGames = results.data.filter(game => game.NAME);
+        
+        if (allGames.length === 0) {
+          document.getElementById('status-msg').innerText = '讀取成功，但找不到有效的桌遊資料，請檢查表單。';
+          return;
+        }
+
+        document.getElementById('status-msg').style.display = 'none';
+        createFilterButtons();
+        displayGames(allGames);
+      }
+    });
+
+    function createFilterButtons() {
+      const container = document.getElementById('filter-container');
+      const types = new Set();
+      
+      allGames.forEach(game => {
+        // 更新為 TYPE
+        const typeStr = game.TYPE || '';
+        if (typeStr) {
+          typeStr.split(/[,，/ ]+/).forEach(t => {
+            if(t.trim() !== '') types.add(t.trim());
+          });
+        }
+      });
+
+      Array.from(types).sort().forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.innerText = type;
+        btn.onclick = () => filterGames(type, btn);
+        container.appendChild(btn);
+      });
+    }
+
+    function filterGames(type, activeBtn) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      activeBtn.classList.add('active');
+
+      const filtered = type === '全部' 
+        ? allGames 
+        : allGames.filter(game => {
+            // 更新為 TYPE
+            const gameType = game.TYPE || '';
+            return gameType.includes(type);
+          });
+      
+      displayGames(filtered);
+    }
+
+    function displayGames(games) {
+      const container = document.getElementById('bg-list');
+      container.innerHTML = '';
+
+      games.forEach(game => {
+        const name = game.NAME;
+        // 更新為 IMAGE
+        const imgPath = game.IMAGE || 'https://via.placeholder.com/250x250?text=No+Image';
+        const players = game.PLAYER || '--';
+        // 更新為 TIME
+        const time = game.TIME || '--';
+        const desc = game.DESCRIPTION || game.DESCRIP || '尚無內容介紹。';
+        const bgg = game.BGGID;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const bggLink = bgg ? `<a href="https://boardgamegeek.com/boardgame/${bgg}" target="_blank" class="bgg-link">🔗 查看 BGG 詳情</a>` : '';
+
+        card.innerHTML = `
+          <div class="img-container">
+            <img src="${imgPath}" alt="${name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/250x250?text=Image+Error'">
+          </div>
+          <div class="card-content">
+            <h3>${name}</h3>
+            <div class="info-row"><span class="info-icon">👥</span> 人數：${players} 人</div>
+            <div class="info-row"><span class="info-icon">⏳</span> 時間：${time} 分鐘</div>
+            <div class="description">${desc}</div>
+          </div>
+          <div class="footer">${bggLink}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+  </script>
+
+</body>
+</html>
