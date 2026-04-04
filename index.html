@@ -9,7 +9,6 @@
     body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
     h1 { color: #333; margin-bottom: 20px; }
     
-    /* 預設隱藏按鈕容器，載入完成後才會顯示 */
     #filter-container {
       margin-bottom: 30px;
       display: none; 
@@ -94,6 +93,32 @@
     }
 
     #status-msg { margin: 20px; color: #666; font-style: italic; }
+
+    /* 👇 📱 手機版 RWD 專屬設定 (螢幕寬度小於 600px 時自動觸發) 👇 */
+    @media (max-width: 600px) {
+      body { padding: 10px; } /* 縮小螢幕邊緣留白 */
+      
+      .grid {
+        grid-template-columns: repeat(2, 1fr); /* 強制設定為 2 欄 */
+        gap: 10px; /* 縮小卡片之間的距離 */
+      }
+      
+      .card-content { padding: 10px; } /* 縮小卡片內文留白 */
+      
+      .card h3 { font-size: 1em; margin: 0 0 4px; } /* 標題字體稍微縮小 */
+      
+      .info-row { font-size: 0.75em; margin-bottom: 2px; } /* 遊戲時間/人數字體縮小 */
+      .info-icon { width: 16px; margin-right: 2px; }
+      
+      .description { 
+        font-size: 0.75em; 
+        margin-top: 6px; 
+        -webkit-line-clamp: 2; /* 手機版版面較小，描述改為最多顯示 2 行 */
+      }
+      
+      #filter-container { gap: 6px; margin-bottom: 20px; }
+      .filter-btn { padding: 6px 12px; font-size: 0.85em; } /* 按鈕稍微縮小以塞下更多分類 */
+    }
   </style>
 </head>
 <body>
@@ -126,7 +151,6 @@
           return;
         }
 
-        // 資料載入完成後，隱藏狀態訊息並顯示按鈕
         document.getElementById('status-msg').style.display = 'none';
         document.getElementById('filter-container').style.display = 'flex';
         
@@ -158,48 +182,4 @@
     }
 
     function filterGames(type, activeBtn) {
-      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-      activeBtn.classList.add('active');
-
-      const filtered = type === '全部' 
-        ? allGames 
-        : allGames.filter(game => {
-            const gameType = game.TYPE || '';
-            return gameType.includes(type);
-          });
-      
-      displayGames(filtered);
-    }
-
-    function displayGames(games) {
-      const container = document.getElementById('bg-list');
-      container.innerHTML = '';
-
-      games.forEach(game => {
-        const name = game.NAME;
-        const imgPath = game.IMAGE || 'https://via.placeholder.com/300x300?text=No+Image';
-        const players = game.PLAYER || '--';
-        const time = game.TIME || '--';
-        const desc = game.DESCRIPTION || game.DESCRIP || '尚無內容介紹。';
-
-        const card = document.createElement('div');
-        card.className = 'card';
-
-        card.innerHTML = `
-          <div class="img-container">
-            <img src="${imgPath}" alt="${name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x300?text=Image+Error'">
-          </div>
-          <div class="card-content">
-            <h3>${name}</h3>
-            <div class="info-row"><span class="info-icon">👥</span> 人數：${players} 人</div>
-            <div class="info-row"><span class="info-icon">⏳</span> 時間：${time} 分鐘</div>
-            <div class="description">${desc}</div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-  </script>
-
-</body>
-</html>
+      document.querySelectorAll('.filter-
