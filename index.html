@@ -55,8 +55,8 @@
   <div class="grid" id="bg-list"></div>
 
   <script>
-    // 你的新 CSV 網址
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/18h5ugzv0ABSNhlxZCve_CenRbw48X72ZHnraLk4FCqU/edit?usp=sharing'; 
+    // 你的 CSV 網址保持不變
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv'; 
 
     Papa.parse(csvUrl, {
       download: true,
@@ -75,15 +75,16 @@
         msgElement.style.display = 'none';
 
         data.forEach(game => {
-          // 這裡會檢查你的欄位名稱，請確保試算表第一列標題包含「名稱」
-          const name = game['名稱'] || game['Name'] || game['遊戲名稱'];
+          // 加入了你截圖中的全大寫 NAME
+          const name = game['名稱'] || game['Name'] || game['NAME'] || game['遊戲名稱'];
           if (!name) return;
 
           const card = document.createElement('div');
           card.className = 'card';
 
-          const imgPath = game['圖片網址'] || game['Image'] || 'https://via.placeholder.com/220x220?text=No+Image';
-          const players = game['人數'] || game['Players'] || '未標記';
+          // 對應你截圖中的 IMGUR 與 PLAYER
+          const imgPath = game['圖片網址'] || game['Image'] || game['IMGUR'] || 'https://via.placeholder.com/220x220?text=No+Image';
+          const players = game['人數'] || game['Players'] || game['PLAYER'] || '未標記';
           const bggId = game['BGG_ID'] || game['BGGID'];
 
           let bggBtn = '';
