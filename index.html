@@ -9,9 +9,10 @@
     body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
     h1 { color: #333; margin-bottom: 20px; }
     
+    /* 預設隱藏按鈕容器，載入完成後才會顯示 */
     #filter-container {
       margin-bottom: 30px;
-      display: flex;
+      display: none; 
       flex-wrap: wrap;
       justify-content: center;
       gap: 10px;
@@ -35,7 +36,7 @@
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px; /* 卡片間距稍微拉近一點 */
+      gap: 20px;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -52,7 +53,6 @@
     }
     .card:hover { transform: translateY(-8px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
     
-    /* 🖼️ 圖片 1:1 (正方形) 空間設定 */
     .img-container {
       width: 100%;
       position: relative;
@@ -70,20 +70,19 @@
       box-sizing: border-box;
     }
 
-    /* 👇 修正這裡的文字區塊間距 👇 */
     .card-content { 
-      padding: 15px; /* 縮小內邊距 */
+      padding: 15px; 
       flex-grow: 1; 
       display: flex; 
       flex-direction: column; 
-      justify-content: flex-start; /* 讓文字靠上對齊，消除奇怪的空白 */
+      justify-content: flex-start; 
     }
-    .card h3 { margin: 0 0 6px; font-size: 1.2em; color: #2c3e50; line-height: 1.3; } /* 標題下緣間距縮小 */
-    .info-row { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; font-size: 0.9em; color: #555; } /* 資訊行間距縮小 */
+    .card h3 { margin: 0 0 6px; font-size: 1.2em; color: #2c3e50; line-height: 1.3; } 
+    .info-row { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; font-size: 0.9em; color: #555; } 
     .info-icon { width: 22px; margin-right: 4px; text-align: center; }
 
     .description { 
-      margin-top: 8px; /* 描述上緣間距縮小 */
+      margin-top: 8px; 
       font-size: 0.85em; 
       color: #7f8c8d; 
       line-height: 1.5;
@@ -91,31 +90,15 @@
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      margin-bottom: 5px;
     }
 
-    /* 按鈕永遠貼齊卡片底部 */
-    .footer { 
-      padding: 0 15px 15px; /* 移除上方 padding 減少空白 */
-      text-align: center; 
-      margin-top: auto; /* 關鍵小技巧：把按鈕推到最下方 */
-    }
-    .bgg-link {
-      display: block;
-      padding: 8px; /* 按鈕稍微變秀氣一點 */
-      background-color: #4F5C48; 
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-size: 0.9em;
-      font-weight: bold;
-    }
-    .bgg-link:hover { background-color: #3d4738; } 
     #status-msg { margin: 20px; color: #666; font-style: italic; }
   </style>
 </head>
 <body>
 
-  <h1>🎲 重雨桌遊櫃</h1>
+  <h1>🎲 重雨桌遊櫃 🎲</h1>
   
   <div id="filter-container">
     <button class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
@@ -143,7 +126,10 @@
           return;
         }
 
+        // 資料載入完成後，隱藏狀態訊息並顯示按鈕
         document.getElementById('status-msg').style.display = 'none';
+        document.getElementById('filter-container').style.display = 'flex';
+        
         createFilterButtons();
         displayGames(allGames);
       }
@@ -195,12 +181,9 @@
         const players = game.PLAYER || '--';
         const time = game.TIME || '--';
         const desc = game.DESCRIPTION || game.DESCRIP || '尚無內容介紹。';
-        const bgg = game.BGGID;
 
         const card = document.createElement('div');
         card.className = 'card';
-
-        const bggLink = bgg ? `<a href="https://boardgamegeek.com/boardgame/${bgg}" target="_blank" class="bgg-link">🔗 查看 BGG 詳情</a>` : '';
 
         card.innerHTML = `
           <div class="img-container">
@@ -212,7 +195,6 @@
             <div class="info-row"><span class="info-icon">⏳</span> 時間：${time} 分鐘</div>
             <div class="description">${desc}</div>
           </div>
-          <div class="footer">${bggLink}</div>
         `;
         container.appendChild(card);
       });
