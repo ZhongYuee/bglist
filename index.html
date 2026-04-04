@@ -93,31 +93,33 @@
     }
 
     #status-msg { margin: 20px; color: #666; font-style: italic; }
+    /* 除錯訊息區塊樣式 */
+    #debug-box { color: red; font-weight: bold; margin: 20px auto; padding: 10px; border: 2px dashed red; display: none; background: #fff0f0; max-width: 800px; text-align: left; }
 
-    /* 👇 📱 手機版 RWD 專屬設定 (螢幕寬度小於 600px 時自動觸發) 👇 */
+    /* 手機版 RWD 專屬設定 */
     @media (max-width: 600px) {
-      body { padding: 10px; } /* 縮小螢幕邊緣留白 */
+      body { padding: 10px; } 
       
       .grid {
-        grid-template-columns: repeat(2, 1fr); /* 強制設定為 2 欄 */
-        gap: 10px; /* 縮小卡片之間的距離 */
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 10px; 
       }
       
-      .card-content { padding: 10px; } /* 縮小卡片內文留白 */
+      .card-content { padding: 10px; } 
       
-      .card h3 { font-size: 1em; margin: 0 0 4px; } /* 標題字體稍微縮小 */
+      .card h3 { font-size: 1em; margin: 0 0 4px; } 
       
-      .info-row { font-size: 0.75em; margin-bottom: 2px; } /* 遊戲時間/人數字體縮小 */
+      .info-row { font-size: 0.75em; margin-bottom: 2px; } 
       .info-icon { width: 16px; margin-right: 2px; }
       
       .description { 
         font-size: 0.75em; 
         margin-top: 6px; 
-        -webkit-line-clamp: 2; /* 手機版版面較小，描述改為最多顯示 2 行 */
+        -webkit-line-clamp: 2; 
       }
       
       #filter-container { gap: 6px; margin-bottom: 20px; }
-      .filter-btn { padding: 6px 12px; font-size: 0.85em; } /* 按鈕稍微縮小以塞下更多分類 */
+      .filter-btn { padding: 6px 12px; font-size: 0.85em; } 
     }
   </style>
 </head>
@@ -130,9 +132,18 @@
   </div>
 
   <div id="status-msg">正在翻找桌遊櫃...</div>
+  <div id="debug-box"></div>
   <div class="grid" id="bg-list"></div>
 
   <script>
+    // 捕捉全域錯誤
+    window.onerror = function(msg, url, line) {
+      const debugBox = document.getElementById('debug-box');
+      debugBox.style.display = 'block';
+      debugBox.innerHTML += `發生全域錯誤：${msg} (行號 ${line})<br>`;
+      document.getElementById('status-msg').style.display = 'none';
+    };
+
     const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv'; 
     let allGames = [];
 
@@ -144,18 +155,41 @@
         return header.replace(/^\uFEFF/, '').trim().toUpperCase();
       },
       complete: function(results) {
-        allGames = results.data.filter(game => game.NAME && game.NAME.trim() !== '');
-        
-        if (allGames.length === 0) {
-          document.getElementById('status-msg').innerText = '讀取成功，但找不到任何有效桌遊資料。';
-          return;
-        }
+        try {
+          const debugBox = document.getElementById('debug-box');
+          const data = results.data;
 
-        document.getElementById('status-msg').style.display = 'none';
-        document.getElementById('filter-container').style.display = 'flex';
-        
-        createFilterButtons();
-        displayGames(allGames);
+          if (data.length === 0) {
+            debugBox.style.display = 'block';
+            debugBox.innerHTML = '表單內沒有資料！請確認 Google 試算表是否有內容，或是發佈到了空白的分頁。';
+            document.getElementById('status-msg').style.display = 'none';
+            return;
+          }
+
+          allGames = data.filter(game => game.NAME && game.NAME.trim() !== '');
+
+          if (allGames.length === 0) {
+            const actualHeaders = Object.keys(data[0]).join(', ');
+            debugBox.style.display = 'block';
+            debugBox.innerHTML = `讀不到 NAME 欄位！<br>我們預期要找的標題是：[NAME, TYPE, TIME, PLAYER, IMAGE, DESCRIPTION]<br>程式實際看到的標題是：[ ${actualHeaders} ]<br>👉 請檢查試算表的標題是否與我們預期的一模一樣。`;
+            document.getElementById('status-msg').style.display = 'none';
+            return;
+          }
+
+          document.getElementById('status-msg').style.display = 'none';
+          document.getElementById('filter-container').style.display = 'flex';
+          
+          createFilterButtons();
+          displayGames(allGames);
+
+        } catch (error) {
+          document.getElementById('debug-box').style.display = 'block';
+          document.getElementById('debug-box').innerHTML = `處理資料時發生錯誤：${error}`;
+        }
+      },
+      error: function(error) {
+        document.getElementById('debug-box').style.display = 'block';
+        document.getElementById('debug-box').innerHTML = `下載表單失敗：${error}`;
       }
     });
 
@@ -182,4 +216,28 @@
     }
 
     function filterGames(type, activeBtn) {
-      document.querySelectorAll('.filter-
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      activeBtn.classList.add('active');
+
+      const filtered = type === '全部' 
+        ? allGames 
+        : allGames.filter(game => {
+            const gameType = game.TYPE || '';
+            return gameType.includes(type);
+          });
+      
+      displayGames(filtered);
+    }
+
+    function displayGames(games) {
+      const container = document.getElementById('bg-list');
+      container.innerHTML = '';
+
+      games.forEach(game => {
+        const name = game.NAME;
+        const imgPath = game.IMAGE || 'https://via.placeholder.com/300x300?text=No+Image';
+        const players = game.PLAYER || '--';
+        const time = game.TIME || '--';
+        const desc = game.DESCRIPTION || game.DESCRIP || '尚無內容介紹。';
+
+        const card =
