@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的專屬桌遊清單</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <style>
+    body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
+    h1 { color: #333; margin-bottom: 30px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 25px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+      padding-bottom: 20px;
+      transition: all 0.3s ease;
+      border: 1px solid #eee;
+    }
+    .card:hover { transform: translateY(-8px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+    .card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      background-color: #f0f0f0;
+    }
+    .card h3 { margin: 15px 10px 8px; font-size: 1.15em; color: #2c3e50; }
+    .card p { margin: 5px 0; color: #7f8c8d; font-size: 0.95em; }
+    .bgg-link {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 8px 16px;
+      background-color: #e67e22;
+      color: white;
+      text-decoration: none;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+    .bgg-link:hover { background-color: #d35400; }
+    #status-msg { margin: 20px; color: #666; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <h1>🎲 我的桌遊收藏</h1>
+  <div id="status-msg">正在從 Google 試算表同步資料...</div>
+  <div class="grid" id="bg-list"></div>
+
+  <script>
+    // 你的新 CSV 網址
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv'; 
+
+    Papa.parse(csvUrl, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        const msgElement = document.getElementById('status-msg');
+        const container = document.getElementById('bg-list');
+        const data = results.data;
+
+        if (data.length === 0) {
+          msgElement.innerText = '讀取成功，但表單內似乎沒有資料。';
+          return;
+        }
+
+        msgElement.style.display = 'none';
+
+        data.forEach(game => {
+          // 這裡會檢查你的欄位名稱，請確保試算表第一列標題包含「名稱」
+          const name = game['名稱'] || game['Name'] || game['遊戲名稱'];
+          if (!name) return;
+
+          const card = document.createElement('div');
+          card.className = 'card';
+
+          const imgPath = game['圖片網址'] || game['Image'] || 'https://via.placeholder.com/220x220?text=No+Image';
+          const players = game['人數'] || game['Players'] || '未標記';
+          const bggId = game['BGG_ID'] || game['BGGID'];
+
+          let bggBtn = '';
+          if (bggId) {
+            bggBtn = `<a href="https://boardgamegeek.com/boardgame/${bggId}" target="_blank" class="bgg-link">BGG 頁面</a>`;
+          }
+
+          card.innerHTML = `
+            <img src="${imgPath}" alt="${name}" onerror="this.src='https://via.placeholder.com/220x220?text=圖片連結失效'">
+            <h3>${name}</h3>
+            <p>👥 人數：${players}</p>
+            ${bggBtn}
+          `;
+          
+          container.appendChild(card);
+        });
+      },
+      error: function(err) {
+        document.getElementById('status-msg').innerHTML = 
+          `<span style="color:red;">讀取失敗！</span><br>原因：${err}<br><br>` +
+          `💡 提示：如果你是在電腦直接點開 HTML 檔案，瀏覽器會因為安全機制擋住請求。<br>` +
+          `請嘗試將程式碼貼到 <a href="https://codepen.io/pen/" target="_blank">CodePen</a> 測試，或是上傳到 GitHub Pages。`;
+      }
+    });
+  </script>
+
+</body>
+</html>
