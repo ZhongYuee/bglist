@@ -36,7 +36,7 @@
 
   <h1>🎲 重雨桌遊櫃 🎲</h1>
   <div id="filter-container">
-    <button class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
+    <button id="btn-all" class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
   </div>
   <div id="status-msg">正在翻找桌遊櫃...</div>
   <div class="grid" id="bg-list"></div>
@@ -94,16 +94,34 @@
       document.getElementById('filter-container').style.display = 'flex';
       
       const container = document.getElementById('filter-container');
-      const types = new Set();
+      const typesInData = new Set();
       allGames.forEach(g => {
-        if (g.TYPE) g.TYPE.split(/[,，/ ]+/).forEach(t => t.trim() && types.add(t.trim()));
+        if (g.TYPE) g.TYPE.split(/[,，/ ]+/).forEach(t => t.trim() && typesInData.add(t.trim()));
       });
-      Array.from(types).sort().forEach(type => {
+
+      // ✨ 固定順序設定
+      const sortedOrder = ["重策", "輕策", "派對", "小遊戲"];
+      const finalOrder = [];
+
+      // 先放入固定的
+      sortedOrder.forEach(type => {
+        if (typesInData.has(type)) {
+          finalOrder.push(type);
+          typesInData.delete(type); // 從剩餘集合中移除
+        }
+      });
+
+      // 如果未來有新的分類，排在後面
+      const otherTypes = Array.from(typesInData).sort();
+      const combinedTypes = finalOrder.concat(otherTypes);
+
+      combinedTypes.forEach(type => {
         const btn = document.createElement('button');
         btn.className = 'filter-btn'; btn.innerText = type;
         btn.onclick = (e) => filterGames(type, e.target);
         container.appendChild(btn);
       });
+
       displayGames(allGames);
     }
 
