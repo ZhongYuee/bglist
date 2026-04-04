@@ -10,14 +10,14 @@
     h1 { color: #333; margin-bottom: 10px; }
     
     #filter-container {
-      margin-bottom: 15px; /* 原本 30px */
+      margin-bottom: 15px; 
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 5px; /* 原本 10px */
+      gap: 5px; 
     }
     .filter-btn {
-      padding: 6px 14px; /* 原本 8px 18px，保留一點大小讓手指好點擊 */
+      padding: 6px 14px; 
       background-color: #fff;
       border: 2px solid #4F5C48; 
       color: #4F5C48;          
@@ -35,7 +35,7 @@
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 12px; /* 卡片之間的距離，原本 25px */
+      gap: 12px; 
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -54,12 +54,12 @@
     
     .img-container {
       width: 100%;
-      height: 200px; /* 配合整體緊湊感，圖片區塊稍微縮短 */
+      height: 200px; 
       background-color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 5px; /* 原本 10px */
+      padding: 5px; 
       box-sizing: border-box;
       border-bottom: 1px solid #f5f5f5;
     }
@@ -69,13 +69,13 @@
       object-fit: contain;
     }
 
-    .card-content { padding: 10px; flex-grow: 1; } /* 卡片內文四周留白，原本 20px */
-    .card h3 { margin: 0 0 6px; font-size: 1.15em; color: #2c3e50; line-height: 1.3; } /* 標題下方留白，原本 12px */
-    .info-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.9em; color: #555; } /* 原本 8px */
-    .info-icon { width: 22px; margin-right: 4px; text-align: center; } /* 圖示與文字間距縮小 */
+    .card-content { padding: 10px; flex-grow: 1; } 
+    .card h3 { margin: 0 0 6px; font-size: 1.15em; color: #2c3e50; line-height: 1.3; } 
+    .info-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.9em; color: #555; } 
+    .info-icon { width: 22px; margin-right: 4px; text-align: center; } 
 
     .description { 
-      margin-top: 6px; /* 原本 12px */
+      margin-top: 6px; 
       font-size: 0.85em; 
       color: #7f8c8d; 
       line-height: 1.5;
@@ -85,8 +85,167 @@
       overflow: hidden;
     }
 
-    .footer { padding: 8px 10px 10px; text-align: center; } /* 按鈕外圍留白砍半 */
+    .footer { padding: 8px 10px 10px; text-align: center; } 
     .bgg-link {
       display: block;
-      padding: 6px; /* 按鈕內圍留白，原本 10px */
-      background-color: #4F
+      padding: 6px; 
+      background-color: #4F5C48; 
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+    .bgg-link:hover { background-color: #3d4738; } 
+    #status-msg { margin: 10px; color: #666; font-style: italic; }
+    
+    /* 除錯訊息區塊樣式 */
+    #debug-box { color: red; font-weight: bold; margin: 20px; padding: 10px; border: 2px dashed red; display: none; background: #fff0f0; }
+  </style>
+</head>
+<body>
+
+  <h1>🎲 重雨桌遊櫃</h1>
+  
+  <div id="filter-container">
+    <button class="filter-btn active" onclick="filterGames('全部', this)">全部</button>
+  </div>
+
+  <div id="status-msg">正在翻找桌遊櫃...</div>
+  <div id="debug-box"></div>
+  
+  <div class="grid" id="bg-list"></div>
+
+  <script>
+    // 捕捉網頁全域錯誤
+    window.onerror = function(msg, url, line) {
+      const debugBox = document.getElementById('debug-box');
+      debugBox.style.display = 'block';
+      debugBox.innerHTML += `發生錯誤：${msg} (行號 ${line})<br>`;
+      document.getElementById('status-msg').style.display = 'none';
+    };
+
+    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUS0MI9cUclJMJHd6yMJJUQFIFbl1G7XqRtMP5q5H1nMQOzTrcmdGTrn1R_QtEQC5dhkxuGhheKyKw/pub?output=csv'; 
+    let allGames = [];
+
+    Papa.parse(csvUrl, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      // 🛡️ 終極防呆機制：強制轉大寫、清除前後空白、清除 Google 試算表的隱藏 BOM 亂碼
+      transformHeader: function(header) {
+        return header.replace(/^\uFEFF/, '').trim().toUpperCase();
+      },
+      complete: function(results) {
+        try {
+          const debugBox = document.getElementById('debug-box');
+          const data = results.data;
+          
+          // 檢查有沒有讀到任何資料
+          if (data.length === 0) {
+            debugBox.style.display = 'block';
+            debugBox.innerHTML = '表單內沒有資料！請確認 Google 試算表的分頁設定。';
+            document.getElementById('status-msg').style.display = 'none';
+            return;
+          }
+
+          // 抓取具有 NAME 欄位的資料
+          allGames = data.filter(game => game.NAME);
+          
+          if (allGames.length === 0) {
+            // 如果找不到 NAME，直接把程式看到的標題印出來給我們看！
+            const actualHeaders = Object.keys(data[0]).join(', ');
+            debugBox.style.display = 'block';
+            debugBox.innerHTML = `讀不到 NAME 欄位。<br>程式目前看到的標題是：[ ${actualHeaders} ]<br>請檢查是否與表單一致。`;
+            document.getElementById('status-msg').style.display = 'none';
+            return;
+          }
+
+          document.getElementById('status-msg').style.display = 'none';
+          createFilterButtons();
+          displayGames(allGames);
+        } catch (error) {
+          // 捕捉任何 JavaScript 執行錯誤
+          document.getElementById('debug-box').style.display = 'block';
+          document.getElementById('debug-box').innerHTML = `處理資料時發生錯誤：${error}`;
+        }
+      },
+      error: function(error) {
+        // 捕捉下載 CSV 失敗的錯誤
+        document.getElementById('debug-box').style.display = 'block';
+        document.getElementById('debug-box').innerHTML = `下載表單失敗：${error}`;
+      }
+    });
+
+    function createFilterButtons() {
+      const container = document.getElementById('filter-container');
+      const types = new Set();
+      
+      allGames.forEach(game => {
+        const typeStr = game.TYPE || '';
+        if (typeStr) {
+          typeStr.split(/[,，/ ]+/).forEach(t => {
+            if(t.trim() !== '') types.add(t.trim());
+          });
+        }
+      });
+
+      Array.from(types).sort().forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.innerText = type;
+        btn.onclick = () => filterGames(type, btn);
+        container.appendChild(btn);
+      });
+    }
+
+    function filterGames(type, activeBtn) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      activeBtn.classList.add('active');
+
+      const filtered = type === '全部' 
+        ? allGames 
+        : allGames.filter(game => {
+            const gameType = game.TYPE || '';
+            return gameType.includes(type);
+          });
+      
+      displayGames(filtered);
+    }
+
+    function displayGames(games) {
+      const container = document.getElementById('bg-list');
+      container.innerHTML = '';
+
+      games.forEach(game => {
+        const name = game.NAME;
+        const imgPath = game.IMAGE || 'https://via.placeholder.com/250x250?text=No+Image';
+        const players = game.PLAYER || '--';
+        const time = game.TIME || '--';
+        const desc = game.DESCRIPTION || game.DESCRIP || '尚無內容介紹。';
+        const bgg = game.BGGID;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const bggLink = bgg ? `<a href="https://boardgamegeek.com/boardgame/${bgg}" target="_blank" class="bgg-link">🔗 查看 BGG 詳情</a>` : '';
+
+        card.innerHTML = `
+          <div class="img-container">
+            <img src="${imgPath}" alt="${name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/250x250?text=Image+Error'">
+          </div>
+          <div class="card-content">
+            <h3>${name}</h3>
+            <div class="info-row"><span class="info-icon">👥</span> 人數：${players} 人</div>
+            <div class="info-row"><span class="info-icon">⏳</span> 時間：${time} 分鐘</div>
+            <div class="description">${desc}</div>
+          </div>
+          <div class="footer">${bggLink}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+  </script>
+
+</body>
+</html>
