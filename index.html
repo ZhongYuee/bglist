@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>重雨桌遊櫃</title>
+  
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
     body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
@@ -19,11 +22,10 @@
       cursor: pointer; 
       font-weight: bold; 
       transition: all 0.2s; 
-      /* ✨ 消除藍色選取框與手機點擊高光 ✨ */
       outline: none;
       -webkit-tap-highlight-color: transparent;
     }
-    .filter-btn:focus { outline: none; } /* 雙重保險，確保點擊後不留框 */
+    .filter-btn:focus { outline: none; } 
     .filter-btn:hover, .filter-btn.active { background-color: #4F5C48; color: white; box-shadow: 0 4px 10px rgba(79,92,72,0.3); }
     
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
