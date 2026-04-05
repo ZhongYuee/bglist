@@ -9,7 +9,21 @@
     body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
     h1 { color: #333; margin-bottom: 20px; }
     #filter-container { margin-bottom: 30px; display: none; flex-wrap: wrap; justify-content: center; gap: 10px; }
-    .filter-btn { padding: 8px 18px; background-color: #fff; border: 2px solid #4F5C48; color: #4F5C48; border-radius: 25px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+    
+    .filter-btn { 
+      padding: 8px 18px; 
+      background-color: #fff; 
+      border: 2px solid #4F5C48; 
+      color: #4F5C48; 
+      border-radius: 25px; 
+      cursor: pointer; 
+      font-weight: bold; 
+      transition: all 0.2s; 
+      /* ✨ 消除藍色選取框與手機點擊高光 ✨ */
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .filter-btn:focus { outline: none; } /* 雙重保險，確保點擊後不留框 */
     .filter-btn:hover, .filter-btn.active { background-color: #4F5C48; color: white; box-shadow: 0 4px 10px rgba(79,92,72,0.3); }
     
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
@@ -49,14 +63,11 @@
     const fallbackImg = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='100%25' height='100%25' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-weight='bold' font-size='20' text-anchor='middle' dominant-baseline='middle' fill='%23aaaaaa'%3E尚無圖片%3C/text%3E%3C/svg%3E";
     let allGames = [];
 
-    // 自動優化圖片載入速度
     function getOptimizedImg(url) {
       if (!url) return fallbackImg;
-      // 1. 若為 Imgur，自動轉換為 L 級大縮圖，大幅降低檔案大小
       if (url.match(/imgur\.com\/[A-Za-z0-9]+(\.jpg|\.png|\.jpeg|\.gif)$/i)) {
         return url.replace(/(\.[a-zA-Z0-9]+)$/, 'l$1');
       }
-      // 2. 若為 Postimage 或其他圖床，安全保留原網址，交由 HTML 的 lazy loading 處理
       return url;
     }
 
@@ -133,7 +144,6 @@
         container.appendChild(btn);
       });
 
-      // 載入時一次性生成所有卡片，供後續秒切換使用
       displayGames(allGames);
     }
 
@@ -141,7 +151,6 @@
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       
-      // 點擊分類時，瞬間隱藏不符合的卡片 (零延遲秒切換)
       const cards = document.querySelectorAll('.card');
       cards.forEach(card => {
         const cardTypes = card.getAttribute('data-type') || '';
