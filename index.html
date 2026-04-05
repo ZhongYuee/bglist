@@ -31,8 +31,6 @@
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
     
     .card { background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.3s; border: 1px solid #eee; text-align: center; }
-    
-    /* ✨ 將位移改為 0，變成四周均勻擴散的質感陰影 ✨ */
     .card:hover { box-shadow: 0 0 18px rgba(0,0,0,0.25); }
     
     .img-container { width: 100%; position: relative; padding-bottom: 100%; background-color: #fff; border-bottom: 1px solid #f5f5f5; }
@@ -67,6 +65,12 @@
     const fallbackImg = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='100%25' height='100%25' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-weight='bold' font-size='20' text-anchor='middle' dominant-baseline='middle' fill='%23aaaaaa'%3E尚無圖片%3C/text%3E%3C/svg%3E";
     let allGames = [];
 
+    // 負責印出錯誤訊息，不讓網頁死當
+    function showError(msg) {
+      const statusObj = document.getElementById('status-msg');
+      statusObj.innerHTML = `<span style="color: #d9534f;">❌ 翻找失敗：<br><span style="font-size: 0.8em; font-weight: normal;">${msg}</span></span>`;
+    }
+
     function getOptimizedImg(url) {
       if (!url) return fallbackImg;
       if (url.match(/imgur\.com\/[A-Za-z0-9]+(\.jpg|\.png|\.jpeg|\.gif)$/i)) {
@@ -81,6 +85,11 @@
         const response = await fetch(freshUrl);
         if (response.ok) {
           const text = await response.text();
+          // 如果 Google 抽風回傳網頁原始碼而不是 CSV，提早攔截
+          if (text.includes('<html')) {
+            showError("Google 試算表回傳了異常的網頁格式，請檢查連結發佈狀態。");
+            return;
+          }
           parseAndDisplay(text);
         } else {
           loadViaPapa();
@@ -91,3 +100,116 @@
     }
 
     function loadViaPapa() {
+      Papa.parse(baseCsvUrl, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: h => h.replace(/^\uFEFF/, '').trim().toUpperCase(),
+        complete: (results) => {
+          if (results.data && results.data.length > 0) {
+            allGames = results.data.filter(g => g.NAME);
+            if (allGames.length > 0) {
+              renderAll();
+            } else {
+              showError("已連線，但找不到任何桌遊資料 (請確認試算表有 NAME 欄位)。");
+            }
+          } else {
+            showError("試算表內容是空的。");
+          }
+        },
+        error: (err) => {
+          showError(`連線被拒絕 (${err.message})，請重新整理網頁。`);
+        }
+      });
+    }
+
+    function parseAndDisplay(csvText) {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: h => h.replace(/^\uFEFF/, '').trim().toUpperCase(),
+        complete: (results) => {
+          allGames = results.data.filter(g => g.NAME);
+          if (allGames.length > 0) {
+            renderAll();
+          } else {
+            showError("資料解析成功，但找不到任何桌遊名稱 (請確認試算表有 NAME 欄位)。");
+          }
+        }
+      });
+    }
+
+    function renderAll() {
+      const status = document.getElementById('status-msg');
+      if (status) status.style.display = 'none';
+      document.getElementById('filter-container').style.display = 'flex';
+      
+      const container = document.getElementById('filter-container');
+      const typesInData = new Set();
+      allGames.forEach(g => {
+        if (g.TYPE) g.TYPE.split(/[,，/ ]+/).forEach(t => t.trim() && typesInData.add(t.trim()));
+      });
+
+      const sortedOrder = ["重策", "輕策", "派對", "小遊戲"];
+      const finalOrder = [];
+
+      sortedOrder.forEach(type => {
+        if (typesInData.has(type)) {
+          finalOrder.push(type);
+          typesInData.delete(type);
+        }
+      });
+
+      const otherTypes = Array.from(typesInData).sort();
+      const combinedTypes = finalOrder.concat(otherTypes);
+
+      combinedTypes.forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn'; btn.innerText = type;
+        btn.onclick = (e) => filterGames(type, e.target);
+        container.appendChild(btn);
+      });
+
+      displayGames(allGames);
+    }
+
+    function filterGames(type, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        const cardTypes = card.getAttribute('data-type') || '';
+        if (type === '全部' || cardTypes.includes(type)) {
+          card.style.display = ''; 
+        } else {
+          card.style.display = 'none'; 
+        }
+      });
+    }
+
+    function displayGames(games) {
+      const container = document.getElementById('bg-list');
+      container.innerHTML = games.map(g => {
+        const optimizedImgUrl = getOptimizedImg(g.IMAGE);
+        return `
+          <div class="card" data-type="${g.TYPE || ''}">
+            <div class="img-container">
+              <img src="${optimizedImgUrl}" alt="${g.NAME}" loading="lazy" onerror="this.onerror=null; this.src='${fallbackImg}'">
+            </div>
+            <div class="card-content">
+              <h3>${g.NAME}</h3>
+              <div class="info-row">
+                👥 ${g.PLAYER || '--'} 人 ⏳ ${g.TIME || '--'} 分鐘
+              </div>
+              <div class="description">${g.DESCRIPTION || g.DESCRIP || ''}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.onload = startLoading;
+  </script>
+</body>
+</html>
