@@ -31,7 +31,9 @@
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
     
     .card { background: #fff; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.3s; border: 1px solid #eee; text-align: center; }
-    .card:hover { box-shadow: 0 12px 35px rgba(0,0,0,0.25); }
+    
+    /* ✨ 將位移改為 0，變成四周均勻擴散的質感陰影 ✨ */
+    .card:hover { box-shadow: 0 0 18px rgba(0,0,0,0.25); }
     
     .img-container { width: 100%; position: relative; padding-bottom: 100%; background-color: #fff; border-bottom: 1px solid #f5f5f5; }
     .card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; padding: 10px; box-sizing: border-box; }
@@ -89,103 +91,3 @@
     }
 
     function loadViaPapa() {
-      Papa.parse(baseCsvUrl, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: h => h.replace(/^\uFEFF/, '').trim().toUpperCase(),
-        complete: (results) => {
-          if (results.data && results.data.length > 0) {
-            allGames = results.data.filter(g => g.NAME);
-            renderAll();
-          }
-        }
-      });
-    }
-
-    function parseAndDisplay(csvText) {
-      Papa.parse(csvText, {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: h => h.replace(/^\uFEFF/, '').trim().toUpperCase(),
-        complete: (results) => {
-          allGames = results.data.filter(g => g.NAME);
-          renderAll();
-        }
-      });
-    }
-
-    function renderAll() {
-      const status = document.getElementById('status-msg');
-      if (status) status.style.display = 'none';
-      document.getElementById('filter-container').style.display = 'flex';
-      
-      const container = document.getElementById('filter-container');
-      const typesInData = new Set();
-      allGames.forEach(g => {
-        if (g.TYPE) g.TYPE.split(/[,，/ ]+/).forEach(t => t.trim() && typesInData.add(t.trim()));
-      });
-
-      const sortedOrder = ["重策", "輕策", "派對", "小遊戲"];
-      const finalOrder = [];
-
-      sortedOrder.forEach(type => {
-        if (typesInData.has(type)) {
-          finalOrder.push(type);
-          typesInData.delete(type);
-        }
-      });
-
-      const otherTypes = Array.from(typesInData).sort();
-      const combinedTypes = finalOrder.concat(otherTypes);
-
-      combinedTypes.forEach(type => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn'; btn.innerText = type;
-        btn.onclick = (e) => filterGames(type, e.target);
-        container.appendChild(btn);
-      });
-
-      displayGames(allGames);
-    }
-
-    function filterGames(type, btn) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      
-      const cards = document.querySelectorAll('.card');
-      cards.forEach(card => {
-        const cardTypes = card.getAttribute('data-type') || '';
-        if (type === '全部' || cardTypes.includes(type)) {
-          card.style.display = ''; 
-        } else {
-          card.style.display = 'none'; 
-        }
-      });
-    }
-
-    function displayGames(games) {
-      const container = document.getElementById('bg-list');
-      container.innerHTML = games.map(g => {
-        const optimizedImgUrl = getOptimizedImg(g.IMAGE);
-        return `
-          <div class="card" data-type="${g.TYPE || ''}">
-            <div class="img-container">
-              <img src="${optimizedImgUrl}" alt="${g.NAME}" loading="lazy" onerror="this.onerror=null; this.src='${fallbackImg}'">
-            </div>
-            <div class="card-content">
-              <h3>${g.NAME}</h3>
-              <div class="info-row">
-                👥 ${g.PLAYER || '--'} 人 ⏳ ${g.TIME || '--'} 分鐘
-              </div>
-              <div class="description">${g.DESCRIPTION || g.DESCRIP || ''}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    window.onload = startLoading;
-  </script>
-</body>
-</html>
